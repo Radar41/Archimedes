@@ -119,6 +119,18 @@ class WorkflowRun(Base):
     archimedes_object_ref: Mapped[dict] = mapped_column(JSONVariant, default=dict, nullable=False)
 
 
+class WorkflowStep(Base):
+    __tablename__ = "workflow_step"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workflow_run.id"), nullable=False)
+    step_name: Mapped[str] = mapped_column(Text, nullable=False)
+    step_order: Mapped[int] = mapped_column(Integer, nullable=False)
+    status: Mapped[str] = mapped_column(Text, nullable=False, default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow)
+
+
 class ExecutionEnvelopeRecord(Base):
     __tablename__ = "execution_envelope"
 
@@ -156,6 +168,83 @@ class ApprovalGate(Base):
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     resolved_by: Mapped[str | None] = mapped_column(Text, nullable=True)
     rationale: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class ActionRequest(Base):
+    __tablename__ = "action_request"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('pending', 'in_progress', 'succeeded', 'failed', 'blocked')",
+            name="ck_action_request_status",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workflow_run.id"), nullable=False)
+    envelope_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("execution_envelope.id"), nullable=False)
+    adapter_type: Mapped[str] = mapped_column(Text, nullable=False)
+    operation: Mapped[str] = mapped_column(Text, nullable=False)
+    idempotency_key: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    request_payload: Mapped[dict] = mapped_column(JSONVariant, default=dict, nullable=False)
+    status: Mapped[str] = mapped_column(Text, nullable=False, default="pending")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow)
+
+
+class ActionAttempt(Base):
+    __tablename__ = "action_attempt"
+    __table_args__ = (
+        CheckConstraint(
+            "outcome IN ('success', 'retryable_fail', 'fatal_fail', 'policy_denied')",
+            name="ck_action_attempt_outcome",
+        ),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    action_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("action_request.id"), nullable=False)
+    attempt_num: Mapped[int] = mapped_column(Integer, nullable=False)
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    outcome: Mapped[str | None] = mapped_column(Text, nullable=True)
+    response_summary: Mapped[dict] = mapped_column(JSONVariant, default=dict, nullable=False)
+    error_detail: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class ExternalObjectMap(Base):
+    __tablename__ = "external_object_map"
+    __table_args__ = (
+        Index("ix_external_object_map_canonical", "canonical_type", "canonical_id"),
+        Index("ux_external_object_map_system_external", "external_system", "external_id", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    external_system: Mapped[str] = mapped_column(Text, nullable=False)
+    external_id: Mapped[str] = mapped_column(Text, nullable=False)
+    canonical_type: Mapped[str] = mapped_column(Text, nullable=False)
+    canonical_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+
+
+class SyncCursor(Base):
+    __tablename__ = "sync_cursor"
+    __table_args__ = (
+        Index("ux_sync_cursor_source", "source", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    source: Mapped[str] = mapped_column(Text, nullable=False)
+    cursor_value: Mapped[str] = mapped_column(Text, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow)
+
+
+class IdempotencyRecord(Base):
+    __tablename__ = "idempotency_record"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    key: Mapped[str] = mapped_column(Text, nullable=False, unique=True)
+    result_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
 
 
 class ReviewFlag(Base):
