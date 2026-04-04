@@ -5,9 +5,11 @@ from temporalio import activity
 
 @activity.defn
 async def collect_drift_inputs(subject_id: str) -> dict:
-    return {"subject_id": subject_id, "external_state": {}, "canonical_state": {}}
+    # TODO(Phase 3): fetch external state from Asana/GitHub and canonical state from shadow_tasks
+    raise NotImplementedError("Drift input collection not yet implemented.")
 
 
 @activity.defn
 async def compare_canonical_and_external_state(inputs: dict) -> dict:
-    return {"subject_id": inputs["subject_id"], "drift_detected": False, "review_flags": []}
+    # TODO(Phase 3): compare canonical vs external state and produce review flags
+    raise NotImplementedError("Drift comparison not yet implemented.")

@@ -21,4 +21,5 @@ async def evaluate_execution_boundary(payload: dict) -> dict:
 
 @activity.defn
 async def enqueue_or_record_decision(decision: dict) -> dict:
-    return decision
+    # TODO: persist decision to policy_decision table and enqueue adjacent work if BLOCK_AND_QUEUE
+    raise NotImplementedError("Decision persistence not yet implemented.")

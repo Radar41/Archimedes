@@ -31,9 +31,12 @@ def resolve_approval(
     resolved_by: str,
     rationale: str | None = None,
 ) -> ApprovalGate:
+    _VALID_RESOLUTION_STATUSES = {"approved", "rejected", "dismissed"}
+    if status not in _VALID_RESOLUTION_STATUSES:
+        raise ValueError(f"Invalid approval status {status!r}. Must be one of {sorted(_VALID_RESOLUTION_STATUSES)}.")
     gate = session.get(ApprovalGate, gate_id)
     if gate is None:
-        raise NotImplementedError("Approval gate not found for resolution.")
+        raise ValueError(f"Approval gate {gate_id} not found.")
     gate.status = status
     gate.resolved_by = resolved_by
     gate.rationale = rationale
