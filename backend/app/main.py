@@ -5,7 +5,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from backend.app.api.routes import router
-from backend.app.db import Base, engine
+from backend.app.db import engine
+from backend.app.models.shadow import Base
 
 
 @asynccontextmanager

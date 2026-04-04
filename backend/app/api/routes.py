@@ -8,8 +8,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.adapters.asana.client import AsanaClient
-from backend.app.db import ShadowTask, check_database, get_session
-from backend.app.sync.inbound import run_inbound_sync
+from backend.app.db import check_database, get_session
+from backend.app.models.shadow import ShadowTask
+from backend.app.services.inbound_sync import run_inbound_sync
 
 router = APIRouter()
 

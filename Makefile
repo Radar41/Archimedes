@@ -12,5 +12,5 @@ migrate:
 	$(PYTHON) -m alembic upgrade head
 
 lint:
-	$(PYTHON) -m compileall backend tests
+	$(PYTHON) -m compileall backend
 

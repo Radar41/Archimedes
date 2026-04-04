@@ -1,7 +1,7 @@
 {
   "name": "Archimedes",
   "dockerComposeFile": [
-    "../docker-compose.dev.yml"
+    "../infra/compose/docker-compose.dev.yml"
   ],
   "service": "workspace",
   "runServices": [

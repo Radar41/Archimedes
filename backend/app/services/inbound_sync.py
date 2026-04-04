@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from sqlalchemy.orm import Session
 
 from backend.app.adapters.asana.service import list_project_tasks
-from backend.app.db import ShadowTask
+from backend.app.models.shadow import ShadowTask
 
 
 def _task_status(task_completed: bool | None) -> str:
@@ -55,4 +55,3 @@ async def run_inbound_sync(session: Session, project_gid: str) -> dict[str, int]
 
     session.commit()
     return {"inserted": inserted, "updated": updated, "total": len(tasks)}
-

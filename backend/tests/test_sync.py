@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from sqlalchemy import select
 
-from backend.app.db import ShadowTask
-from backend.app.sync import inbound
+from backend.app.models.shadow import ShadowTask
+from backend.app.services import inbound_sync as inbound
 
 
 class FakeTask:
