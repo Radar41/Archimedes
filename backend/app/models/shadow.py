@@ -91,6 +91,9 @@ class AdjacentQueueItem(Base):
 
 class ArtifactRef(Base):
     __tablename__ = "artifact_ref"
+    __table_args__ = (
+        Index("ix_artifact_ref_task_id", "task_id"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     task_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("shadow_tasks.id"), nullable=False)
@@ -103,6 +106,9 @@ class ArtifactRef(Base):
 
 class WorkflowRun(Base):
     __tablename__ = "workflow_run"
+    __table_args__ = (
+        Index("ix_workflow_run_status", "status"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     workflow_name: Mapped[str] = mapped_column(Text, nullable=False)
@@ -113,8 +119,51 @@ class WorkflowRun(Base):
     archimedes_object_ref: Mapped[dict] = mapped_column(JSONVariant, default=dict, nullable=False)
 
 
+class ExecutionEnvelopeRecord(Base):
+    __tablename__ = "execution_envelope"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workflow_run.id"), nullable=False)
+    allowed_repos: Mapped[list] = mapped_column(JSONVariant, default=list, nullable=False)
+    allowed_branches: Mapped[list] = mapped_column(JSONVariant, default=list, nullable=False)
+    allowed_commands: Mapped[list] = mapped_column(JSONVariant, default=list, nullable=False)
+    allowed_envs: Mapped[list] = mapped_column(JSONVariant, default=list, nullable=False)
+    secret_scope_ref: Mapped[str] = mapped_column(Text, nullable=False)
+    max_cost_units: Mapped[int] = mapped_column(Integer, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+
+
+class PolicyDecision(Base):
+    __tablename__ = "policy_decision"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workflow_run.id"), nullable=False)
+    envelope_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("execution_envelope.id"), nullable=False)
+    decision: Mapped[str] = mapped_column(Text, nullable=False)
+    policy_version: Mapped[str] = mapped_column(Text, nullable=False)
+    rationale: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+
+
+class ApprovalGate(Base):
+    __tablename__ = "approval_gate"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    run_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workflow_run.id"), nullable=False)
+    gate_type: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(Text, nullable=False, default="pending")
+    requested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    resolved_by: Mapped[str | None] = mapped_column(Text, nullable=True)
+    rationale: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
 class ReviewFlag(Base):
     __tablename__ = "review_flag"
+    __table_args__ = (
+        CheckConstraint("status IN ('open', 'resolved', 'dismissed')", name="ck_review_flag_status"),
+        Index("ix_review_flag_task_status", "task_id", "status"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     task_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("shadow_tasks.id"), nullable=False)

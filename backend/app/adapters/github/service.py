@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import os
+import random
 import time
 from typing import Any
 
@@ -9,6 +10,8 @@ import httpx
 from dotenv import load_dotenv
 
 load_dotenv()
+
+_RETRYABLE_SERVER_CODES = {500, 502, 503}
 
 
 class GitHubClient:
@@ -59,7 +62,12 @@ class GitHubClient:
     ) -> dict:
         for attempt in range(4):
             response = await self._client.request(method, path, params=params, json=json)
-            if not self._is_rate_limited(response):
+
+            if self._is_rate_limited(response):
+                delay = self._rate_limit_delay(response)
+            elif response.status_code in _RETRYABLE_SERVER_CODES:
+                delay = 2.0 ** attempt
+            else:
                 response.raise_for_status()
                 if not response.content:
                     return {}
@@ -67,7 +75,8 @@ class GitHubClient:
 
             if attempt == 3:
                 response.raise_for_status()
-            await asyncio.sleep(self._rate_limit_delay(response))
+            # Add jitter to avoid thundering herd
+            await asyncio.sleep(delay + random.uniform(0, 1))
 
         raise NotImplementedError("GitHub client request retry loop exhausted unexpectedly.")
 

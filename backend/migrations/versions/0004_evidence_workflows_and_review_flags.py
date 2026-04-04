@@ -5,8 +5,8 @@ from alembic import op
 from sqlalchemy.dialects import postgresql
 
 
-revision = "0003_evidence_workflows_and_review_flags"
-down_revision = "0002_audit_and_expansion_ledger"
+revision = "0004_evidence_workflows_and_review_flags"
+down_revision = "0003_schema_hardening"
 branch_labels = None
 depends_on = None
 
