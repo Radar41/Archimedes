@@ -3,7 +3,7 @@ from __future__ import annotations
 import uuid
 from datetime import UTC, datetime
 
-from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import CheckConstraint, Index, JSON, Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
@@ -57,6 +57,10 @@ class IdMapping(Base):
 
 class AuditEvent(Base):
     __tablename__ = "audit_event"
+    __table_args__ = (
+        Index("ix_audit_event_subject", "subject_type", "subject_id"),
+        Index("ix_audit_event_type_created", "event_type", "created_at"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     event_type: Mapped[str] = mapped_column(Text, nullable=False)
@@ -70,14 +74,19 @@ class AuditEvent(Base):
 
 class AdjacentQueueItem(Base):
     __tablename__ = "adjacent_queue_item"
+    __table_args__ = (
+        CheckConstraint("status IN ('queued', 'promoted', 'dismissed')", name="ck_adjacent_queue_status"),
+        Index("ix_adjacent_queue_status_created", "status", "created_at"),
+    )
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
-    origin_task_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    origin_task_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("shadow_tasks.id"), nullable=False)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     candidate_action: Mapped[str] = mapped_column(Text, nullable=False)
     classification: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(Text, nullable=False, default="queued")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow)
 
 
 class ArtifactRef(Base):

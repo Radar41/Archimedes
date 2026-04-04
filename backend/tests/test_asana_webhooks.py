@@ -13,6 +13,16 @@ def _sign(secret: str, body: bytes) -> str:
     return hmac.new(secret.encode("utf-8"), body, hashlib.sha256).hexdigest()
 
 
+def test_asana_webhook_handshake_echoes_secret(client) -> None:
+    response = client.post(
+        "/webhooks/asana",
+        content=b"",
+        headers={"X-Hook-Secret": "handshake-token-abc"},
+    )
+    assert response.status_code == 200
+    assert response.headers["X-Hook-Secret"] == "handshake-token-abc"
+
+
 def test_asana_webhook_rejects_invalid_signature(client, monkeypatch) -> None:
     monkeypatch.setenv("ASANA_WEBHOOK_SECRET", "test-secret")
 

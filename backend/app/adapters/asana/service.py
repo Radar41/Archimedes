@@ -84,11 +84,16 @@ async def create_story(
     text: str,
     *,
     client: AsanaClient | None = None,
+    idempotency_key: str | None = None,
 ) -> dict:
     owns_client = client is None
     client = client or AsanaClient()
     try:
-        payload = await client.post(f"/tasks/{task_gid}/stories", json={"data": {"text": text}})
+        payload = await client.post(
+            f"/tasks/{task_gid}/stories",
+            json={"data": {"text": text}},
+            idempotency_key=idempotency_key,
+        )
         return payload["data"]
     finally:
         if owns_client:
@@ -100,11 +105,16 @@ async def update_task(
     updates: dict,
     *,
     client: AsanaClient | None = None,
+    idempotency_key: str | None = None,
 ) -> dict:
     owns_client = client is None
     client = client or AsanaClient()
     try:
-        payload = await client.put(f"/tasks/{task_gid}", json={"data": updates})
+        payload = await client.put(
+            f"/tasks/{task_gid}",
+            json={"data": updates},
+            idempotency_key=idempotency_key,
+        )
         return payload["data"]
     finally:
         if owns_client:
@@ -116,6 +126,7 @@ async def add_dependency(
     dependency_gid: str,
     *,
     client: AsanaClient | None = None,
+    idempotency_key: str | None = None,
 ) -> dict:
     owns_client = client is None
     client = client or AsanaClient()
@@ -123,6 +134,7 @@ async def add_dependency(
         payload = await client.post(
             f"/tasks/{task_gid}/addDependencies",
             json={"data": {"dependencies": [dependency_gid]}},
+            idempotency_key=idempotency_key,
         )
         return payload["data"]
     finally:

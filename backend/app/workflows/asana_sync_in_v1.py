@@ -2,17 +2,20 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from temporalio import activity, workflow
+from temporalio import workflow
+from temporalio.common import RetryPolicy
 
+from backend.app.workflows.activities.asana_sync import (
+    fetch_asana_project_snapshot,
+    upsert_shadow_tasks,
+)
 
-@activity.defn
-async def fetch_asana_project_snapshot(project_gid: str) -> dict:
-    raise NotImplementedError("Temporal activity placeholder for inbound Asana sync fetch.")
-
-
-@activity.defn
-async def upsert_shadow_tasks(snapshot: dict) -> dict:
-    raise NotImplementedError("Temporal activity placeholder for shadow task upsert.")
+_ACTIVITY_RETRY = RetryPolicy(
+    initial_interval=timedelta(seconds=1),
+    backoff_coefficient=2.0,
+    maximum_interval=timedelta(seconds=30),
+    maximum_attempts=5,
+)
 
 
 @workflow.defn
@@ -23,9 +26,11 @@ class AsanaSyncInV1Workflow:
             fetch_asana_project_snapshot,
             project_gid,
             start_to_close_timeout=timedelta(minutes=2),
+            retry_policy=_ACTIVITY_RETRY,
         )
         return await workflow.execute_activity(
             upsert_shadow_tasks,
             snapshot,
             start_to_close_timeout=timedelta(minutes=2),
+            retry_policy=_ACTIVITY_RETRY,
         )

@@ -2,17 +2,20 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from temporalio import activity, workflow
+from temporalio import workflow
+from temporalio.common import RetryPolicy
 
+from backend.app.workflows.activities.gated_execution import (
+    enqueue_or_record_decision,
+    evaluate_execution_boundary,
+)
 
-@activity.defn
-async def evaluate_execution_boundary(payload: dict) -> dict:
-    raise NotImplementedError("Temporal activity placeholder for execution boundary evaluation.")
-
-
-@activity.defn
-async def enqueue_or_record_decision(decision: dict) -> dict:
-    raise NotImplementedError("Temporal activity placeholder for gated execution persistence.")
+_ACTIVITY_RETRY = RetryPolicy(
+    initial_interval=timedelta(seconds=1),
+    backoff_coefficient=2.0,
+    maximum_interval=timedelta(seconds=30),
+    maximum_attempts=5,
+)
 
 
 @workflow.defn
@@ -23,9 +26,11 @@ class GatedExecutionV1Workflow:
             evaluate_execution_boundary,
             payload,
             start_to_close_timeout=timedelta(minutes=2),
+            retry_policy=_ACTIVITY_RETRY,
         )
         return await workflow.execute_activity(
             enqueue_or_record_decision,
             decision,
             start_to_close_timeout=timedelta(minutes=2),
+            retry_policy=_ACTIVITY_RETRY,
         )

@@ -2,17 +2,20 @@ from __future__ import annotations
 
 from datetime import timedelta
 
-from temporalio import activity, workflow
+from temporalio import workflow
+from temporalio.common import RetryPolicy
 
+from backend.app.workflows.activities.drift import (
+    collect_drift_inputs,
+    compare_canonical_and_external_state,
+)
 
-@activity.defn
-async def collect_drift_inputs(subject_id: str) -> dict:
-    raise NotImplementedError("Temporal activity placeholder for drift input collection.")
-
-
-@activity.defn
-async def compare_canonical_and_external_state(inputs: dict) -> dict:
-    raise NotImplementedError("Temporal activity placeholder for drift comparison.")
+_ACTIVITY_RETRY = RetryPolicy(
+    initial_interval=timedelta(seconds=1),
+    backoff_coefficient=2.0,
+    maximum_interval=timedelta(seconds=30),
+    maximum_attempts=5,
+)
 
 
 @workflow.defn
@@ -23,9 +26,11 @@ class DriftDetectV1Workflow:
             collect_drift_inputs,
             subject_id,
             start_to_close_timeout=timedelta(minutes=2),
+            retry_policy=_ACTIVITY_RETRY,
         )
         return await workflow.execute_activity(
             compare_canonical_and_external_state,
             inputs,
             start_to_close_timeout=timedelta(minutes=2),
+            retry_policy=_ACTIVITY_RETRY,
         )

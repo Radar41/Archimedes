@@ -7,7 +7,7 @@ import os
 from collections.abc import Iterable
 from typing import Any
 
-from fastapi import APIRouter, Depends, Header, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Header, HTTPException, Request, Response, status
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
@@ -39,12 +39,21 @@ def _event_records(payload: dict[str, Any]) -> Iterable[dict[str, Any]]:
     return [payload]
 
 
-@router.post("/asana")
+@router.post("/asana", response_model=None)
 async def ingest_asana_webhook(
     request: Request,
     session: Session = Depends(get_session),
+    x_hook_secret: str | None = Header(default=None, alias="X-Hook-Secret"),
     x_hook_signature: str | None = Header(default=None, alias="X-Hook-Signature"),
-) -> dict[str, int]:
+) -> Response | dict[str, int]:
+    # --- Asana handshake: echo X-Hook-Secret to establish the webhook ---
+    if x_hook_secret is not None:
+        return Response(
+            status_code=200,
+            headers={"X-Hook-Secret": x_hook_secret},
+        )
+
+    # --- Normal delivery: validate signature ---
     if x_hook_signature is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Missing webhook signature.")
 
