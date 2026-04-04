@@ -53,3 +53,28 @@ class IdMapping(Base):
     canonical_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
     object_type: Mapped[str] = mapped_column(String(255), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+
+
+class AuditEvent(Base):
+    __tablename__ = "audit_event"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    event_type: Mapped[str] = mapped_column(Text, nullable=False)
+    subject_type: Mapped[str] = mapped_column(Text, nullable=False)
+    subject_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    summary: Mapped[str] = mapped_column(Text, nullable=False)
+    detail_json: Mapped[dict] = mapped_column(JSONVariant, default=dict, nullable=False)
+    trace_id: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+
+
+class AdjacentQueueItem(Base):
+    __tablename__ = "adjacent_queue_item"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    origin_task_id: Mapped[uuid.UUID] = mapped_column(nullable=False)
+    title: Mapped[str] = mapped_column(Text, nullable=False)
+    candidate_action: Mapped[str] = mapped_column(Text, nullable=False)
+    classification: Mapped[str] = mapped_column(Text, nullable=False)
+    status: Mapped[str] = mapped_column(Text, nullable=False, default="queued")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)

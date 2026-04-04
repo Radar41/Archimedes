@@ -6,6 +6,7 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
+from sqlalchemy.pool import StaticPool
 
 from backend.app.db import get_session
 from backend.app.models.shadow import Base
@@ -14,7 +15,12 @@ from backend.app.main import app
 
 @pytest.fixture()
 def session() -> Generator[Session, None, None]:
-    engine = create_engine("sqlite+pysqlite:///:memory:", future=True)
+    engine = create_engine(
+        "sqlite+pysqlite:///:memory:",
+        future=True,
+        connect_args={"check_same_thread": False},
+        poolclass=StaticPool,
+    )
     TestingSessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False, expire_on_commit=False)
     Base.metadata.create_all(bind=engine)
     db = TestingSessionLocal()
@@ -35,4 +41,3 @@ def client(session: Session) -> Generator[TestClient, None, None]:
             yield test_client
     finally:
         app.dependency_overrides.clear()
-

@@ -78,3 +78,53 @@ async def list_sections(
         if owns_client:
             await client.close()
 
+
+async def create_story(
+    task_gid: str,
+    text: str,
+    *,
+    client: AsanaClient | None = None,
+) -> dict:
+    owns_client = client is None
+    client = client or AsanaClient()
+    try:
+        payload = await client.post(f"/tasks/{task_gid}/stories", json={"data": {"text": text}})
+        return payload["data"]
+    finally:
+        if owns_client:
+            await client.close()
+
+
+async def update_task(
+    task_gid: str,
+    updates: dict,
+    *,
+    client: AsanaClient | None = None,
+) -> dict:
+    owns_client = client is None
+    client = client or AsanaClient()
+    try:
+        payload = await client.put(f"/tasks/{task_gid}", json={"data": updates})
+        return payload["data"]
+    finally:
+        if owns_client:
+            await client.close()
+
+
+async def add_dependency(
+    task_gid: str,
+    dependency_gid: str,
+    *,
+    client: AsanaClient | None = None,
+) -> dict:
+    owns_client = client is None
+    client = client or AsanaClient()
+    try:
+        payload = await client.post(
+            f"/tasks/{task_gid}/addDependencies",
+            json={"data": {"dependencies": [dependency_gid]}},
+        )
+        return payload["data"]
+    finally:
+        if owns_client:
+            await client.close()

@@ -42,9 +42,21 @@ class AsanaClient:
     async def get(self, path: str, params: dict | None = None) -> dict:
         return await self._request("GET", path, params=params)
 
-    async def _request(self, method: str, path: str, params: dict | None = None) -> dict:
+    async def post(self, path: str, json: dict | None = None) -> dict:
+        return await self._request("POST", path, json=json)
+
+    async def put(self, path: str, json: dict | None = None) -> dict:
+        return await self._request("PUT", path, json=json)
+
+    async def _request(
+        self,
+        method: str,
+        path: str,
+        params: dict | None = None,
+        json: dict | None = None,
+    ) -> dict:
         for attempt in range(4):
-            response = await self._client.request(method, path, params=params)
+            response = await self._client.request(method, path, params=params, json=json)
             if response.status_code != 429:
                 response.raise_for_status()
                 return response.json()
@@ -61,4 +73,3 @@ class AsanaClient:
             return False
         await self.get("/users/me")
         return True
-
