@@ -1,0 +1,21 @@
+{
+  "name": "Archimedes",
+  "dockerComposeFile": [
+    "../docker-compose.dev.yml"
+  ],
+  "service": "workspace",
+  "runServices": [
+    "workspace",
+    "postgres"
+  ],
+  "workspaceFolder": "/workspaces/Archimedes",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": {
+      "version": "3.12"
+    },
+    "ghcr.io/devcontainers/features/node:1": {
+      "version": "lts"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {}
+  }
+}
