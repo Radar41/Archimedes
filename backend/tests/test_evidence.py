@@ -1,14 +1,11 @@
 from __future__ import annotations
 
+import hashlib
 import uuid
 
 from backend.app.adapters.github.evidence import store_evidence
 from backend.app.models.shadow import ShadowTask
-from backend.app.services.evidence import (
-    create_artifact_ref,
-    finalize_artifact,
-    list_artifacts_for_task,
-)
+from backend.app.services import evidence
 
 
 def _seed_task(session) -> ShadowTask:
@@ -26,20 +23,30 @@ def _seed_task(session) -> ShadowTask:
 
 
 def test_evidence_lifecycle(session) -> None:
+    class FakeArtifactStore:
+        def put_object(self, *, object_name: str, payload: bytes, content_type: str) -> str:
+            assert object_name.endswith(".txt")
+            assert payload == b"build log"
+            assert content_type == "text/plain"
+            return f"http://minio.local/archimedes-artifacts/{object_name}"
+
+    evidence._artifact_store = FakeArtifactStore()
     task = _seed_task(session)
 
-    artifact = create_artifact_ref(
+    artifact = evidence.create_artifact_ref(
         session,
         task_id=task.id,
         artifact_type="log",
-        storage_url="https://example.com/log.txt",
-        content_hash="abc123",
+        payload=b"build log",
+        filename=f"{task.id}/log/build.txt",
+        content_type="text/plain",
     )
-    artifacts = list_artifacts_for_task(session, task.id)
-    finalized = finalize_artifact(session, artifact.id)
+    artifacts = evidence.list_artifacts_for_task(session, task.id)
+    finalized = evidence.finalize_artifact(session, artifact.id)
 
     assert len(artifacts) == 1
     assert artifacts[0].artifact_type == "log"
+    assert artifacts[0].content_hash == hashlib.sha256(b"build log").hexdigest()
     assert finalized.immutable is True
 
 

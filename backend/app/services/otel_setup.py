@@ -51,7 +51,11 @@ def init_telemetry(app: FastAPI) -> dict[str, Any]:
         )
     )
 
-    langfuse_endpoint = os.getenv("LANGFUSE_OTEL_ENDPOINT") or os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+    langfuse_endpoint = (
+        os.getenv("LANGFUSE_OTEL_ENDPOINT")
+        or os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
+        or "http://localhost:3000/api/public/otel/v1/traces"
+    )
     if langfuse_endpoint:
         try:
             from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
