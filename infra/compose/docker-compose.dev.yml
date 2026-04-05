@@ -29,13 +29,14 @@ services:
       retries: 5
       start_period: 10s
   temporal:
-    image: temporalio/server:latest
+    image: temporalio/auto-setup:latest
     environment:
       DB: postgresql
       DB_PORT: 5432
       POSTGRES_USER: archimedes
       POSTGRES_PWD: archimedes_dev
       POSTGRES_SEEDS: postgres
+      DYNAMIC_CONFIG_FILE_PATH: /etc/temporal/config/dynamicconfig/docker.yaml
     depends_on:
       postgres:
         condition: service_healthy
