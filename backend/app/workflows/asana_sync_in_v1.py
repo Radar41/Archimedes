@@ -68,7 +68,7 @@ class AsanaSyncInV1Workflow:
             drift_result = await workflow.execute_child_workflow(
                 DriftDetectV1Workflow.run,
                 {"project_gid": project_gid, "change_events": change_events},
-                id=f"drift-detect:{project_gid}:{len(change_events)}",
+                id=f"drift-detect:{project_gid}:{workflow.info().run_id}",
             )
 
         return {

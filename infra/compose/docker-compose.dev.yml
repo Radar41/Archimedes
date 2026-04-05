@@ -39,6 +39,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+    volumes:
+      - ./dynamicconfig:/etc/temporal/config/dynamicconfig
     ports:
       - "7233:7233"
     healthcheck:

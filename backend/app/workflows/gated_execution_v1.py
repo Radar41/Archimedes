@@ -5,10 +5,11 @@ from datetime import timedelta
 from temporalio import workflow
 from temporalio.common import RetryPolicy
 
-from backend.app.workflows.activities.gated_execution import (
-    enqueue_or_record_decision,
-    evaluate_execution_boundary,
-)
+with workflow.unsafe.imports_passed_through():
+    from backend.app.workflows.activities.gated_execution import (
+        enqueue_or_record_decision,
+        evaluate_execution_boundary,
+    )
 
 _ACTIVITY_RETRY = RetryPolicy(
     initial_interval=timedelta(seconds=1),
