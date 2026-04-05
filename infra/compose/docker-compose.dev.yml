@@ -31,7 +31,7 @@ services:
   temporal:
     image: temporalio/auto-setup:latest
     environment:
-      DB: postgresql
+      DB: postgres12
       DB_PORT: 5432
       POSTGRES_USER: archimedes
       POSTGRES_PWD: archimedes_dev
