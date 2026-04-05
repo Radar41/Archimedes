@@ -99,7 +99,7 @@ def list_artifacts_for_task(session: Session, task_id: uuid.UUID) -> list[Artifa
 def finalize_artifact(session: Session, artifact_id: uuid.UUID) -> ArtifactRef:
     artifact = session.get(ArtifactRef, artifact_id)
     if artifact is None:
-        raise NotImplementedError("Artifact reference not found for finalization.")
+        raise ValueError("Artifact reference not found for finalization.")
     artifact.immutable = True
     session.add(artifact)
     session.commit()

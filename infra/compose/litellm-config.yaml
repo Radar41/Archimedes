@@ -7,9 +7,9 @@ model_list:
     litellm_params:
       model: gpt-4o
       api_key: os.environ/OPENAI_API_KEY
-  - model_name: claude-sonnet-4-20250514
+  - model_name: claude-sonnet-4-6-latest
     litellm_params:
-      model: claude-sonnet-4-20250514
+      model: claude-sonnet-4-6-latest
       api_key: os.environ/ANTHROPIC_API_KEY
 
 general_settings:

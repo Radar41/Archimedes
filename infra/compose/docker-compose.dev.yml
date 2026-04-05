@@ -21,6 +21,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./init-databases.sql:/docker-entrypoint-initdb.d/init-databases.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U archimedes -d archimedes_dev"]
       interval: 10s
@@ -56,7 +57,7 @@ services:
     ports:
       - "8233:8233"
     healthcheck:
-      test: ["CMD-SHELL", "node -e \"fetch('http://127.0.0.1:8233').then((response) => process.exit(response.ok ? 0 : 1)).catch(() => process.exit(1))\""]
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8233 || exit 1"]
       interval: 10s
       timeout: 10s
       retries: 10
@@ -85,7 +86,7 @@ services:
   langfuse:
     image: langfuse/langfuse:latest
     environment:
-      DATABASE_URL: ${LANGFUSE_DATABASE_URL:-postgresql://archimedes:archimedes_dev@postgres:5432/archimedes_dev}
+      DATABASE_URL: ${LANGFUSE_DATABASE_URL:-postgresql://archimedes:archimedes_dev@postgres:5432/langfuse_dev}
       NEXTAUTH_SECRET: ${LANGFUSE_SECRET_KEY}
       SALT: ${LANGFUSE_PUBLIC_KEY}
       NEXTAUTH_URL: http://localhost:3000
@@ -109,6 +110,8 @@ services:
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY}
     volumes:
       - ./litellm-config.yaml:/app/config.yaml
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "4000:4000"
     healthcheck:

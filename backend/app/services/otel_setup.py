@@ -56,14 +56,13 @@ def init_telemetry(app: FastAPI) -> dict[str, Any]:
         or os.getenv("OTEL_EXPORTER_OTLP_ENDPOINT")
         or "http://localhost:3000/api/public/otel/v1/traces"
     )
-    if langfuse_endpoint:
-        try:
-            from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
+    try:
+        from opentelemetry.exporter.otlp.proto.http.trace_exporter import OTLPSpanExporter
 
-            exporter = OTLPSpanExporter(endpoint=langfuse_endpoint, headers=_langfuse_headers())
-            provider.add_span_processor(BatchSpanProcessor(exporter))
-        except ImportError:
-            pass
+        exporter = OTLPSpanExporter(endpoint=langfuse_endpoint, headers=_langfuse_headers())
+        provider.add_span_processor(BatchSpanProcessor(exporter))
+    except ImportError:
+        pass
 
     trace.set_tracer_provider(provider)
     FastAPIInstrumentor.instrument_app(app, tracer_provider=provider)
