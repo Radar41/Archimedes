@@ -141,6 +141,7 @@ class FileSource(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     name: Mapped[str] = mapped_column(Text, nullable=False)
+    task_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("shadow_tasks.id", ondelete="CASCADE"), nullable=False)
     root_path: Mapped[str] = mapped_column(Text, nullable=False)
     include_glob: Mapped[str] = mapped_column(Text, nullable=False, default="**/*")
     cursor_value: Mapped[str | None] = mapped_column(Text, nullable=True)

@@ -21,6 +21,7 @@ from backend.app.workflows.activities.drift import (
     compare_canonical_and_external_state,
     record_drift_findings,
 )
+from backend.app.workflows.activities.filesystem import scan_filesystem_activity
 from backend.app.workflows.activities.gated_execution import (
     enqueue_or_record_decision,
     evaluate_execution_boundary,
@@ -57,6 +58,7 @@ async def main() -> None:
             collect_drift_inputs,
             compare_canonical_and_external_state,
             record_drift_findings,
+            scan_filesystem_activity,
             evaluate_execution_boundary,
             enqueue_or_record_decision,
             create_branch_activity,
