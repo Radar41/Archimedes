@@ -1,6 +1,6 @@
 PYTHON ?= python3
 
-.PHONY: dev test migrate lint
+.PHONY: dev test migrate lint validate-stack provenance
 
 dev:
 	$(PYTHON) -m uvicorn backend.app.main:app --reload
@@ -14,3 +14,8 @@ migrate:
 lint:
 	$(PYTHON) -m compileall backend
 
+validate-stack:
+	./infra/scripts/validate-stack.sh
+
+provenance:
+	./infra/scripts/capture-provenance.sh
