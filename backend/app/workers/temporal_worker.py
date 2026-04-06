@@ -12,6 +12,7 @@ from backend.app.workflows.activities.asana_activities import (
     update_task_status_activity,
 )
 from backend.app.workflows.activities.asana_sync import (
+    consume_inbox_events,
     fetch_asana_project_snapshot,
     upsert_shadow_tasks,
 )
@@ -49,6 +50,7 @@ async def main() -> None:
         activities=[
             fetch_asana_project_snapshot,
             upsert_shadow_tasks,
+            consume_inbox_events,
             sync_tasks_activity,
             post_evidence_comment_activity,
             update_task_status_activity,
