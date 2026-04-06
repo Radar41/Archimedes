@@ -87,6 +87,28 @@ def create_artifact_ref(
     return artifact
 
 
+def create_artifact_ref_for_url(
+    session: Session,
+    *,
+    task_id: uuid.UUID,
+    artifact_type: str,
+    storage_url: str,
+    content_hash: str,
+    immutable: bool = False,
+) -> ArtifactRef:
+    artifact = ArtifactRef(
+        task_id=task_id,
+        artifact_type=artifact_type,
+        storage_url=storage_url,
+        content_hash=content_hash,
+        immutable=immutable,
+    )
+    session.add(artifact)
+    session.commit()
+    session.refresh(artifact)
+    return artifact
+
+
 def list_artifacts_for_task(session: Session, task_id: uuid.UUID) -> list[ArtifactRef]:
     stmt = (
         select(ArtifactRef)

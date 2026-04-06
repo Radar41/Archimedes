@@ -2,15 +2,23 @@ model_list:
   - model_name: ollama/llama3:8b
     litellm_params:
       model: ollama/llama3:8b
-      api_base: http://host.docker.internal:11434
+      api_base: http://ollama:11434
   - model_name: gpt-4o
     litellm_params:
       model: gpt-4o
       api_key: os.environ/OPENAI_API_KEY
-  - model_name: claude-sonnet-4-6-latest
+  - model_name: claude-sonnet-4-6
     litellm_params:
-      model: claude-sonnet-4-6-latest
+      model: claude-sonnet-4-6
       api_key: os.environ/ANTHROPIC_API_KEY
+  - model_name: text-embedding-3-small
+    litellm_params:
+      model: text-embedding-3-small
+      api_key: os.environ/OPENAI_API_KEY
+
+litellm_settings:
+  success_callback: ["langfuse"]
+  failure_callback: ["langfuse"]
 
 general_settings:
   master_key: os.environ/LITELLM_MASTER_KEY

@@ -5,10 +5,24 @@ from datetime import UTC, datetime
 
 from sqlalchemy import CheckConstraint, Index, JSON, Boolean, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.types import UserDefinedType
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 # Use JSONB on PostgreSQL, fall back to JSON on other dialects (e.g. SQLite in tests)
 JSONVariant = JSON().with_variant(JSONB, "postgresql")
+
+
+class PgVector(UserDefinedType):
+    cache_ok = True
+
+    def __init__(self, dimensions: int) -> None:
+        self.dimensions = dimensions
+
+    def get_col_spec(self, **kw) -> str:
+        return f"vector({self.dimensions})"
+
+
+EmbeddingVariant = JSON().with_variant(PgVector(1536), "postgresql")
 
 
 def utcnow() -> datetime:
@@ -102,6 +116,54 @@ class ArtifactRef(Base):
     content_hash: Mapped[str] = mapped_column(Text, nullable=False)
     immutable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+
+
+class DocumentChunk(Base):
+    __tablename__ = "document_chunk"
+    __table_args__ = (
+        Index("ix_document_chunk_artifact_chunk", "artifact_id", "chunk_index", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    artifact_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("artifact_ref.id", ondelete="CASCADE"), nullable=False)
+    chunk_index: Mapped[int] = mapped_column(Integer, nullable=False)
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    embedding: Mapped[list[float]] = mapped_column(EmbeddingVariant, nullable=False)
+    metadata_json: Mapped[dict] = mapped_column(JSONVariant, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+
+
+class FileSource(Base):
+    __tablename__ = "file_source"
+    __table_args__ = (
+        Index("ux_file_source_root_path", "root_path", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    name: Mapped[str] = mapped_column(Text, nullable=False)
+    root_path: Mapped[str] = mapped_column(Text, nullable=False)
+    include_glob: Mapped[str] = mapped_column(Text, nullable=False, default="**/*")
+    cursor_value: Mapped[str | None] = mapped_column(Text, nullable=True)
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow)
+
+
+class FileMetadata(Base):
+    __tablename__ = "file_metadata"
+    __table_args__ = (
+        Index("ux_file_metadata_source_relpath", "source_id", "relative_path", unique=True),
+    )
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    source_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("file_source.id", ondelete="CASCADE"), nullable=False)
+    artifact_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("artifact_ref.id", ondelete="SET NULL"), nullable=True)
+    relative_path: Mapped[str] = mapped_column(Text, nullable=False)
+    content_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    size_bytes: Mapped[int] = mapped_column(Integer, nullable=False)
+    mtime_utc: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, default=utcnow, onupdate=utcnow)
 
 
 class WorkflowRun(Base):

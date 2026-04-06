@@ -2,14 +2,17 @@ from __future__ import annotations
 
 import os
 import subprocess
+import uuid
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, Form, HTTPException, UploadFile
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from backend.app.adapters.asana.client import AsanaClient
 from backend.app.db import check_database, get_session
 from backend.app.models.shadow import ShadowTask
+from backend.app.services.document_ingest import ingest_artifact_document, similarity_search
+from backend.app.services.evidence import create_artifact_ref
 from backend.app.services.inbound_sync import run_inbound_sync
 
 router = APIRouter()
@@ -63,3 +66,40 @@ async def sync_inbound(session: Session = Depends(get_session)) -> dict[str, int
     project_gid = os.getenv("ASANA_PROJECT_GID", "1213914133387697")
     return await run_inbound_sync(session=session, project_gid=project_gid)
 
+
+@router.post("/artifacts/upload")
+async def upload_artifact(
+    task_id: str = Form(...),
+    artifact_type: str = Form("source_document"),
+    file: UploadFile = File(...),
+    session: Session = Depends(get_session),
+) -> dict:
+    payload = await file.read()
+    if not payload:
+        raise HTTPException(status_code=400, detail="Uploaded artifact is empty.")
+    artifact = create_artifact_ref(
+        session,
+        task_id=uuid.UUID(task_id),
+        artifact_type=artifact_type,
+        payload=payload,
+        filename=file.filename,
+        content_type=file.content_type or "application/octet-stream",
+    )
+    chunks = await ingest_artifact_document(
+        session,
+        artifact=artifact,
+        payload=payload,
+        filename=file.filename,
+        content_type=file.content_type or "application/octet-stream",
+    )
+    return {
+        "artifact_id": str(artifact.id),
+        "storage_url": artifact.storage_url,
+        "chunk_count": len(chunks),
+        "content_hash": artifact.content_hash,
+    }
+
+
+@router.get("/artifacts/search")
+async def search_artifacts(query: str, top_k: int = 5, session: Session = Depends(get_session)) -> list[dict]:
+    return await similarity_search(session=session, query_text=query, top_k=top_k)
