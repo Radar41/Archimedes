@@ -1,0 +1,6 @@
+services:
+  litellm:
+    environment:
+      OLLAMA_API_BASE: ${OLLAMA_API_BASE:-http://100.122.244.63:11434}
+    volumes:
+      - ./litellm-config.remote-ollama.yaml:/app/config.yaml

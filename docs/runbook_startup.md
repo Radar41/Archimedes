@@ -6,6 +6,10 @@
 docker compose -f infra/compose/docker-compose.dev.yml up -d
 ```
 
+If LiteLLM should target a remote Ollama host over Tailscale instead of the
+default local endpoint, apply the remote override described in
+[`docs/runbook_ollama_migration.md`](/home/radar41/Archimedes/docs/runbook_ollama_migration.md).
+
 ## 2. Apply database migrations
 
 ```bash
@@ -36,19 +40,12 @@ streamlit run ops_console/streamlit_app/drift_queue.py
 Register the workflow and activity modules in the worker process, then start it against the configured Temporal namespace.
 
 ```bash
-python3 -m backend.app.workflows.worker
+python3 -m backend.app.workers.temporal_worker
 ```
-
-If the worker module is not yet implemented, wire a bootstrap that registers:
-
-- `backend.app.workflows.asana_sync_in_v1.AsanaSyncInV1Workflow`
-- `backend.app.workflows.drift_detect_v1.DriftDetectV1Workflow`
-- `backend.app.workflows.gated_execution_v1.GatedExecutionV1Workflow`
-- `backend.app.workflows.activities.asana_activities`
-- `backend.app.workflows.activities.github_activities`
 
 ## 6. Verify system health
 
 - `GET /health` for API and database reachability.
 - Streamlit Health page for adapter reachability and last sync time.
 - Inspect `workflow_run`, `approval_gate`, and `review_flag` tables after first workflow execution.
+- Run `./infra/scripts/validate-stack.sh` to validate the local or remote Ollama route, LiteLLM, Langfuse, Temporal, MinIO, Tailscale, and SOPS wiring.
